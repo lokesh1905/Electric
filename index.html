@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aurora">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2b3d">
+  <title>Electric Shop — Rate Book</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 20px rgba(0,0,0,0.08);
+      --transition: all 0.2s ease;
+    }
+
+    [data-theme="slate"] {
+      --bg-base: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f8fafc;
+      --border: #e2e8f0;
+      --accent: #1e40af;
+      --accent-light: #eff6ff;
+      --accent-glow: rgba(30,64,175,0.15);
+      --text: #0f172a;
+      --text2: #334155;
+      --muted: #64748b;
+      --success: #0f7b3a;
+      --success-light: #eaf8ef;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --sell: #0f7b3a;
+      --sell-light: #eaf8ef;
+      --gold: #d97706;
+    }
+
+    [data-theme="aurora"] {
+      --bg-base: #eef2ff;
+      --bg-surface: #ffffff;
+      --bg-elevated: #fafcff;
+      --border: #d9e2f5;
+      --accent: #0f2b3d;
+      --accent-light: #eef7ff;
+      --accent-glow: rgba(15,43,61,0.12);
+      --text: #0a2540;
+      --text2: #2c3e50;
+      --muted: #5e7c97;
+      --success: #1f8a4c;
+      --success-light: #e3f9ee;
+      --danger: #e25c5c;
+      --danger-light: #fff1f0;
+      --sell: #1f8a4c;
+      --gold: #e2a13f;
+    }
+
+    [data-theme="ember"] {
+      --bg-base: #2c1a1a;
+      --bg-surface: #3e2a2a;
+      --bg-elevated: #4f3838;
+      --border: #684e4e;
+      --accent: #ff8c42;
+      --accent-light: #4a3028;
+      --accent-glow: rgba(255,140,66,0.25);
+      --text: #ffefd9;
+      --text2: #fad4b3;
+      --muted: #c7a58a;
+      --success: #66cc8a;
+      --success-light: #283b2a;
+      --danger: #ff7b72;
+      --danger-light: #542a25;
+      --sell: #66cc8a;
+      --gold: #ffb347;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-base);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: white; }
+    .logo-text { font-weight: 800; font-size: 1.2rem; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .item-count {
+      background: var(--accent-light);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+
+    .tabs {
+      display: flex;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-light); }
+
+    .panel { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .form-row { margin-bottom: 14px; }
+    .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+    .price-wrap { position: relative; }
+    .price-prefix {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .price-wrap input { padding-left: 28px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+    .save-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .save-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .search-wrap input { padding-left: 44px; padding-right: 44px; }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .search-icon svg { width: 18px; height: 18px; stroke: var(--muted); }
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .search-clear.show { display: flex; }
+    .search-clear:hover { background: var(--accent-light); border-color: var(--accent); }
+
+    /* Filter chips */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+    .filter-chip {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* Sort row */
+    .sort-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .sort-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .sort-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      cursor: pointer;
+    }
+    .sort-btn.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+    /* Stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-val { font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+
+    /* Item cards */
+    .item-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .item-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .item-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .item-name { font-weight: 700; font-size: 15px; flex: 1; }
+    .item-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; font-size: 11px; }
+    .item-cat { background: var(--accent-light); padding: 2px 8px; border-radius: 12px; color: var(--accent); font-weight: 600; }
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .act-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .btn-edit { background: var(--accent-light); color: var(--accent); }
+    .btn-delete { background: var(--danger-light); color: var(--danger); }
+    .btn-copy { background: var(--success-light); color: var(--success); }
+
+    /* Results count */
+    .results-count { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-surface);
+      border-radius: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+    .modal-close {
+      float: right;
+      cursor: pointer;
+      font-size: 24px;
+      background: none;
+      border: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--success);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 680px) {
+      .panel { padding: 12px; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .form-2col { grid-template-columns: 1fr; }
+      .tab { padding: 10px 12px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <span class="logo-text">Electric Shop <span style="font-size:11px; color:var(--muted);">Rate Book</span></span>
+    </div>
+    <div class="header-right">
+      <div class="item-count" id="itemCount">0 Items</div>
+      <button class="icon-btn" id="syncBtn" onclick="reconcileWithSheet()">⟳</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('browse')">📦 Browse</div>
+    <div class="tab" onclick="switchTab('add')">➕ Add</div>
+    <div class="tab" onclick="switchTab('quote')">📄 Quote</div>
+    <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+  </div>
+
+  <!-- BROWSE PANEL -->
+  <div class="panel active" id="tab-browse">
+    <div class="stats-bar" id="statsBar">Loading...</div>
+    
+    <div class="search-wrap">
+      <span class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <input type="text" id="searchInput" placeholder="Search items, brands, categories..." oninput="onSearchInput()">
+      <button class="search-clear" id="searchClear" onclick="clearSearchInput()">✕</button>
+    </div>
+
+    <div class="filter-row" id="filterChips"></div>
+    
+    <div class="sort-row">
+      <span class="sort-label">Sort:</span>
+      <button class="sort-btn" id="sort-name" onclick="setSort('name')">A-Z</button>
+      <button class="sort-btn" id="sort-buy-asc" onclick="setSort('buy-asc')">Buy ↑</button>
+      <button class="sort-btn" id="sort-buy-desc" onclick="setSort('buy-desc')">Buy ↓</button>
+      <button class="sort-btn active" id="sort-recent" onclick="setSort('recent')">Recent</button>
+    </div>
+    
+    <div class="results-count" id="resultsCount"></div>
+    <div id="itemsList"></div>
+  </div>
+
+  <!-- ADD PANEL -->
+  <div class="panel" id="tab-add">
+    <div class="card">
+      <div class="section-label">Item Details</div>
+      <div class="form-row"><label>Item Name *</label><input type="text" id="addName" placeholder="e.g., MCB 32A"></div>
+      <div class="form-row"><label>Brand</label><input type="text" id="addBrand" placeholder="Havells, Legrand"></div>
+      <div class="form-2col">
+        <div><label>Buy Price (₹)</label><div class="price-wrap"><span class="price-prefix">₹</span><input type="number" id="addBuyPrice" step="0.01"></div></div>
+        <div><label>Sell Price (₹)</label><div class="price-wrap"><span class="price-prefix">₹</span><input type="number" id="addSellPrice" step="0.01"></div></div>
+      </div>
+      <div class="form-row"><label>Unit</label><input type="text" id="addUnit" placeholder="per piece / per meter"></div>
+      <div class="form-row"><label>Category</label><input type="text" id="addCat" placeholder="MCB, Wire, Switch"></div>
+      <div class="form-2col">
+        <div><label>Distributor</label><input type="text" id="addDistributor"></div>
+        <div><label>Location</label><input type="text" id="addLocation"></div>
+      </div>
+      <div class="form-row"><label>Notes</label><textarea id="addNote" rows="2"></textarea></div>
+    </div>
+    <button class="save-btn" onclick="saveItem()">💾 Save Item</button>
+  </div>
+
+  <!-- QUOTE PANEL -->
+  <div class="panel" id="tab-quote">
+    <div class="card">
+      <div class="section-label">Quote Generator</div>
+      <div class="search-wrap"><input type="text" id="quoteSearch" placeholder="Search items to add..." oninput="renderQuoteItems()"></div>
+      <div id="quoteItemsList" style="max-height:300px; overflow-y:auto;"></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Quote Summary</div>
+      <div id="quoteSummary"></div>
+      <div class="form-2col">
+        <div><label>Customer Name</label><input type="text" id="quoteCustomer"></div>
+        <div><label>GST %</label><select id="quoteGst" onchange="renderQuoteSummary()"><option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select></div>
+      </div>
+      <div class="form-row"><label>Notes</label><textarea id="quoteNotes" rows="2"></textarea></div>
+      <div style="display:flex; gap:10px;"><button class="save-btn" onclick="shareQuote()" style="flex:1;">📤 Share Quote</button><button onclick="clearQuote()" style="padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--bg-elevated); cursor:pointer;">Clear</button></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="tab-settings">
+    <div class="card">
+      <div class="section-label">Appearance</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="sort-btn" onclick="setTheme('slate')">🌫️ Slate</button>
+        <button class="sort-btn" onclick="setTheme('aurora')">🌌 Aurora</button>
+        <button class="sort-btn" onclick="setTheme('ember')">🔥 Ember</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Data & Backup</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="sort-btn" onclick="exportData()">📄 Export JSON</button>
+        <button class="sort-btn" onclick="exportExcel()">📊 Export Excel</button>
+        <button class="sort-btn" onclick="document.getElementById('importFile').click()">📁 Import JSON</button>
+        <button class="sort-btn" style="color:var(--danger);" onclick="clearAllData()">🗑️ Clear All</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div class="card">
+      <div class="section-label">Google Sheets Sync</div>
+      <div id="gsStatus" style="font-size:13px;">🔄 Loading from Google Sheets...</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px;">Auto-sync every 5 seconds</div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEdit()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+      <div class="modal-title">Edit Item</div>
+      <div id="editForm"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">✓</div>
+
+  <script>
+    // ========== HARDCODED GOOGLE SHEETS URL ==========
+    const GS_URL = "https://script.google.com/macros/s/AKfycbwVop8Nv2yon-J2UjWga98U_AZgTIZwTK-jJzf4-izFlDuwYuYLxEr42nGpy2wNhIKDSw/exec";
+    
+    let items = [];
+    let activeFilter = "All";
+    let activeSort = localStorage.getItem("ratebook_sort") || "recent";
+    let searchQuery = "";
+    let editingId = null;
+    let quoteSelections = {};
+    let autoRefreshInterval = null;
+
+    // ========== LOAD FROM GOOGLE SHEETS ==========
+    async function loadFromSheets() {
+      try {
+        document.getElementById("gsStatus").innerHTML = "🔄 Loading from Google Sheets...";
+        const response = await fetch(GS_URL + "?action=read", { cache: "no-store" });
+        const data = await response.json();
+        
+        if (Array.isArray(data) && data.length > 0) {
+          items = data.map(row => ({
+            id: String(row.id || Date.now() + Math.random()),
+            name: row.name || "Unnamed",
+            brand: row.brand || "",
+            buyPrice: Number(row.buyPrice) || 0,
+            sellPrice: Number(row.sellPrice) || 0,
+            unit: row.unit || "",
+            cat: row.cat || "General",
+            note: row.note || "",
+            distributor: row.distributor || "",
+            location: row.location || "",
+            pinned: row.pinned === true || row.pinned === "TRUE",
+            updated: row.updated || new Date().toLocaleDateString("en-IN"),
+            priceHistory: Array.isArray(row.priceHistory) ? row.priceHistory : []
+          }));
+          localStorage.setItem("ratebook_cache", JSON.stringify(items));
+          document.getElementById("gsStatus").innerHTML = `✅ Loaded ${items.length} items from Google Sheets`;
+          showToast(`✅ Loaded ${items.length} items`);
+        } else {
+          loadFromCache();
+        }
+        renderAll();
+      } catch(err) {
+        console.warn("Sheet fetch failed", err);
+        loadFromCache();
+        document.getElementById("gsStatus").innerHTML = "⚠️ Offline - using cached data";
+      }
+    }
+
+    function loadFromCache() {
+      const cached = localStorage.getItem("ratebook_cache");
+      if (cached) {
+        items = JSON.parse(cached);
+        showToast(`📱 Offline — ${items.length} items from cache`);
+      }
+      renderAll();
+    }
+
+    async function pushToSheets() {
+      try {
+        await fetch(GS_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "write", items: items }) });
+        localStorage.setItem("ratebook_cache", JSON.stringify(items));
+        localStorage.setItem("lastBackup", Date.now().toString());
+      } catch(e) { console.warn("Push failed", e); }
+    }
+
+    async function reconcileWithSheet() {
+      showToast("🔄 Syncing...");
+      await loadFromSheets();
+      await pushToSheets();
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function renderAll() {
+      renderStats();
+      renderFilterChips();
+      renderItems();
+      document.getElementById("itemCount").innerHTML = items.length + " Items";
+    }
+
+    function renderStats() {
+      const total = items.length;
+      const cats = new Set(items.map(i=>i.cat)).size;
+      const avgBuy = total ? (items.reduce((s,i)=>s+(i.buyPrice||0),0)/total).toFixed(0) : 0;
+      const avgSell = total ? (items.reduce((s,i)=>s+(i.sellPrice||0),0)/total).toFixed(0) : 0;
+      document.getElementById("statsBar").innerHTML = `
+        <div class="stat-card"><div class="stat-val">${total}</div><div>Items</div></div>
+        <div class="stat-card"><div class="stat-val">${cats}</div><div>Categories</div></div>
+        <div class="stat-card"><div class="stat-val">₹${avgBuy}</div><div>Avg Buy</div></div>
+        <div class="stat-card"><div class="stat-val">₹${avgSell}</div><div>Avg Sell</div></div>
+      `;
+    }
+
+    function renderFilterChips() {
+      const cats = ["All", ...new Set(items.map(i=>i.cat).filter(Boolean))];
+      const container = document.getElementById("filterChips");
+      if (!container) return;
+      container.innerHTML = cats.map(c => `<div class="filter-chip ${activeFilter===c?'active':''}" onclick="setFilter('${c.replace(/'/g,"\\'")}')">${escapeHtml(c)}</div>`).join('');
+    }
+
+    function setFilter(cat) { 
+      activeFilter = cat; 
+      renderFilterChips(); 
+      renderItems(); 
+    }
+
+    function setSort(sort) { 
+      activeSort = sort; 
+      localStorage.setItem("ratebook_sort", sort); 
+      document.querySelectorAll(".sort-btn").forEach(b=>b.classList.remove("active")); 
+      document.getElementById(`sort-${sort}`)?.classList.add("active"); 
+      renderItems(); 
+    }
+
+    function onSearchInput() {
+      searchQuery = document.getElementById("searchInput").value.toLowerCase();
+      const clearBtn = document.getElementById("searchClear");
+      if (clearBtn) {
+        clearBtn.classList.toggle("show", searchQuery.length > 0);
+      }
+      renderItems();
+    }
+
+    function clearSearchInput() {
+      document.getElementById("searchInput").value = "";
+      searchQuery = "";
+      const clearBtn = document.getElementById("searchClear");
+      if (clearBtn) clearBtn.classList.remove("show");
+      renderItems();
+    }
+
+    function renderItems() {
+      const container = document.getElementById("itemsList");
+      if (!container) return;
+      
+      let filtered = [...items];
+      
+      // Apply category filter
+      if (activeFilter !== "All") {
+        filtered = filtered.filter(i => i.cat === activeFilter);
+      }
+      
+      // Apply search filter
+      if (searchQuery) {
+        filtered = filtered.filter(i => 
+          (i.name || "").toLowerCase().includes(searchQuery) ||
+          (i.brand || "").toLowerCase().includes(searchQuery) ||
+          (i.cat || "").toLowerCase().includes(searchQuery) ||
+          (i.note || "").toLowerCase().includes(searchQuery)
+        );
+      }
+      
+      // Apply sorting
+      if (activeSort === "name") {
+        filtered.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
+      } else if (activeSort === "buy-asc") {
+        filtered.sort((a,b) => (a.buyPrice || 0) - (b.buyPrice || 0));
+      } else if (activeSort === "buy-desc") {
+        filtered.sort((a,b) => (b.buyPrice || 0) - (a.buyPrice || 0));
+      } else if (activeSort === "recent") {
+        filtered.sort((a,b) => String(b.id || "").localeCompare(String(a.id || "")));
+      }
+      
+      // Pinned items first
+      filtered.sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+      
+      // Update results count
+      document.getElementById("resultsCount").innerHTML = `${filtered.length} of ${items.length} items`;
+      
+      // Render items
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px;">✨ No items found</div>`;
+        return;
+      }
+      
+      container.innerHTML = filtered.map(item => {
+        const buy = item.buyPrice || 0;
+        const sell = item.sellPrice || 0;
+        const margin = (sell > buy && buy > 0) ? ((sell - buy) / buy * 100).toFixed(0) : null;
+        
+        return `
+          <div class="item-card" onclick="openDetail('${item.id}')">
+            <div class="item-top">
+              <div class="item-name">
+                ${escapeHtml(item.name)} 
+                ${item.brand ? `<span style="color:var(--muted); font-weight:normal;">(${escapeHtml(item.brand)})</span>` : ''}
+              </div>
+              <div style="text-align:right;">
+                <div><span style="font-size:11px; color:var(--accent);">Buy:</span> <strong>₹${buy.toLocaleString()}</strong></div>
+                ${sell > 0 ? `<div><span style="font-size:11px; color:var(--sell);">Sell:</span> <strong>₹${sell.toLocaleString()}</strong></div>` : ''}
+                ${margin ? `<div style="font-size:11px; color:var(--success);">+${margin}%</div>` : ''}
+              </div>
+            </div>
+            <div class="item-meta">
+              ${item.cat ? `<span class="item-cat">${escapeHtml(item.cat)}</span>` : ''}
+              ${item.unit ? `<span style="color:var(--muted);">/ ${escapeHtml(item.unit)}</span>` : ''}
+            </div>
+            ${item.note ? `<div style="font-size:12px; color:var(--text2); margin-top:6px;">${escapeHtml(item.note.substring(0,80))}${item.note.length > 80 ? '...' : ''}</div>` : ''}
+            <div class="item-actions" onclick="event.stopPropagation()">
+              <button class="act-btn btn-edit" onclick="openEdit('${item.id}')">✏️ Edit</button>
+              <button class="act-btn btn-copy" onclick="shareItem('${item.id}')">📤 Share</button>
+              <button class="act-btn btn-delete" onclick="deleteItem('${item.id}')">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========== CRUD OPERATIONS ==========
+    async function saveItem() {
+      const name = document.getElementById("addName").value.trim();
+      if (!name) { showToast("Item name required"); return; }
+      
+      const newItem = {
+        id: Date.now().toString(),
+        name: name,
+        brand: document.getElementById("addBrand").value.trim(),
+        buyPrice: parseFloat(document.getElementById("addBuyPrice").value) || 0,
+        sellPrice: parseFloat(document.getElementById("addSellPrice").value) || 0,
+        unit: document.getElementById("addUnit").value.trim(),
+        cat: document.getElementById("addCat").value.trim() || "General",
+        distributor: document.getElementById("addDistributor").value.trim(),
+        location: document.getElementById("addLocation").value.trim(),
+        note: document.getElementById("addNote").value.trim(),
+        pinned: false,
+        updated: new Date().toLocaleDateString("en-IN"),
+        priceHistory: [{ date: new Date().toLocaleString(), buyPrice: parseFloat(document.getElementById("addBuyPrice").value)||0, sellPrice: parseFloat(document.getElementById("addSellPrice").value)||0, type: "new" }]
+      };
+      
+      items.unshift(newItem);
+      renderAll();
+      await pushToSheets();
+      
+      // Clear form
+      document.getElementById("addName").value = "";
+      document.getElementById("addBrand").value = "";
+      document.getElementById("addBuyPrice").value = "";
+      document.getElementById("addSellPrice").value = "";
+      document.getElementById("addUnit").value = "";
+      document.getElementById("addCat").value = "";
+      document.getElementById("addDistributor").value = "";
+      document.getElementById("addLocation").value = "";
+      document.getElementById("addNote").value = "";
+      
+      showToast(`✅ "${name}" added`);
+      switchTab("browse");
+    }
+
+    function openDetail(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      
+      document.getElementById("detailContent").innerHTML = `
+        <div class="modal-title">${escapeHtml(item.name)}</div>
+        <div style="margin:12px 0;"><strong>Buy:</strong> ₹${item.buyPrice} &nbsp;|&nbsp; <strong>Sell:</strong> ₹${item.sellPrice}</div>
+        <div><strong>Brand:</strong> ${item.brand || "-"}</div>
+        <div><strong>Category:</strong> ${item.cat || "-"}</div>
+        <div><strong>Unit:</strong> ${item.unit || "-"}</div>
+        <div><strong>Distributor:</strong> ${item.distributor || "-"}</div>
+        <div><strong>Location:</strong> ${item.location || "-"}</div>
+        <div><strong>Notes:</strong> ${item.note || "-"}</div>
+        <div style="margin-top:16px; display:flex; gap:8px;">
+          <button class="sort-btn" onclick="closeDetail();openEdit('${item.id}')">Edit</button>
+          <button class="sort-btn" onclick="shareItem('${item.id}')">Share</button>
+        </div>
+      `;
+      document.getElementById("detailModal").classList.add("active");
+    }
+
+    function closeDetail() { 
+      document.getElementById("detailModal").classList.remove("active"); 
+    }
+
+    function openEdit(id) {
+      editingId = id;
+      const item = items.find(i => i.id === id);
+      document.getElementById("editForm").innerHTML = `
+        <div class="form-row"><label>Name</label><input type="text" id="editName" value="${escapeHtml(item.name)}"></div>
+        <div class="form-row"><label>Brand</label><input type="text" id="editBrand" value="${escapeHtml(item.brand || '')}"></div>
+        <div class="form-2col">
+          <div><label>Buy Price</label><input type="number" id="editBuyPrice" value="${item.buyPrice}"></div>
+          <div><label>Sell Price</label><input type="number" id="editSellPrice" value="${item.sellPrice}"></div>
+        </div>
+        <div class="form-row"><label>Unit</label><input type="text" id="editUnit" value="${escapeHtml(item.unit || '')}"></div>
+        <div class="form-row"><label>Category</label><input type="text" id="editCat" value="${escapeHtml(item.cat || '')}"></div>
+        <div class="form-row"><label>Notes</label><textarea id="editNote" rows="2">${escapeHtml(item.note || '')}</textarea></div>
+        <button class="save-btn" onclick="updateItem()">Update Item</button>
+      `;
+      document.getElementById("editModal").classList.add("active");
+    }
+
+    function closeEdit() { 
+      document.getElementById("editModal").classList.remove("active"); 
+      editingId = null; 
+    }
+
+    async function updateItem() {
+      const idx = items.findIndex(i => i.id === editingId);
+      if (idx === -1) return;
+      
+      items[idx] = {
+        ...items[idx],
+        name: document.getElementById("editName").value,
+        brand: document.getElementById("editBrand").value,
+        buyPrice: parseFloat(document.getElementById("editBuyPrice").value) || 0,
+        sellPrice: parseFloat(document.getElementById("editSellPrice").value) || 0,
+        unit: document.getElementById("editUnit").value,
+        cat: document.getElementById("editCat").value,
+        note: document.getElementById("editNote").value,
+        updated: new Date().toLocaleDateString("en-IN")
+      };
+      
+      renderAll();
+      await pushToSheets();
+      closeEdit();
+      showToast("✅ Item updated");
+    }
+
+    async function deleteItem(id) {
+      if (confirm("Delete this item?")) {
+        items = items.filter(i => i.id !== id);
+        renderAll();
+        await pushToSheets();
+        showToast("🗑️ Deleted");
+      }
+    }
+
+    // ========== QUOTE FUNCTIONS ==========
+    function renderQuoteItems() {
+      const q = (document.getElementById("quoteSearch")?.value || "").toLowerCase();
+      let list = items.filter(i => !q || (i.name || "").toLowerCase().includes(q));
+      
+      document.getElementById("quoteItemsList").innerHTML = list.map(item => {
+        const price = item.sellPrice || item.buyPrice;
+        const selected = !!quoteSelections[item.id];
+        const qty = quoteSelections[item.id] || 1;
+        return `
+          <div class="item-card" style="margin-bottom:8px; cursor:pointer;" onclick="toggleQuoteItem('${item.id}')">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>${escapeHtml(item.name)}</strong><br>
+                <span style="font-size:11px;">${escapeHtml(item.cat || '')}</span>
+              </div>
+              <div style="text-align:right;">
+                <div>₹${price}</div>
+                ${selected ? `<div style="margin-top:4px;">
+                  <button class="sort-btn" style="padding:4px 8px;" onclick="event.stopPropagation();changeQty('${item.id}',-1)">-</button> 
+                  ${qty} 
+                  <button class="sort-btn" style="padding:4px 8px;" onclick="event.stopPropagation();changeQty('${item.id}',1)">+</button>
+                </div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+      renderQuoteSummary();
+    }
+
+    function toggleQuoteItem(id) { 
+      if (quoteSelections[id]) delete quoteSelections[id]; 
+      else quoteSelections[id] = 1; 
+      renderQuoteItems(); 
+    }
+
+    function changeQty(id, delta) { 
+      quoteSelections[id] = Math.max(1, (quoteSelections[id] || 1) + delta); 
+      renderQuoteItems(); 
+    }
+
+    function renderQuoteSummary() {
+      let subtotal = 0;
+      let lines = [];
+      for (let id in quoteSelections) {
+        const item = items.find(i => i.id === id);
+        if (item) {
+          const price = item.sellPrice || item.buyPrice;
+          const total = price * quoteSelections[id];
+          subtotal += total;
+          lines.push(`${escapeHtml(item.name)} x${quoteSelections[id]} = ₹${total}`);
+        }
+      }
+      const gst = parseFloat(document.getElementById("quoteGst").value);
+      const gstAmt = subtotal * gst / 100;
+      document.getElementById("quoteSummary").innerHTML = `
+        ${lines.length ? lines.join("<br>") : "<div>Select items above</div>"}
+        ${lines.length ? `<hr><div><strong>Subtotal: ₹${subtotal.toLocaleString()}</strong></div>
+        <div>GST (${gst}%): ₹${gstAmt.toFixed(2)}</div>
+        <div style="font-size:18px; font-weight:800;">Total: ₹${(subtotal + gstAmt).toLocaleString()}</div>` : ''}
+      `;
+    }
+
+    function shareQuote() {
+      let text = "*QUOTATION - Electric Shop*\n\n";
+      for (let id in quoteSelections) {
+        const item = items.find(i => i.id === id);
+        if (item) {
+          const price = item.sellPrice || item.buyPrice;
+          text += `${item.name} x${quoteSelections[id]} = ₹${price * quoteSelections[id]}\n`;
+        }
+      }
+      const gst = parseFloat(document.getElementById("quoteGst").value);
+      text += `\nGST ${gst}% included`;
+      const customer = document.getElementById("quoteCustomer").value;
+      if (customer) text = `Customer: ${customer}\n\n` + text;
+      navigator.clipboard?.writeText(text);
+      showToast("Quote copied to clipboard");
+    }
+
+    function clearQuote() { 
+      quoteSelections = {}; 
+      renderQuoteItems(); 
+    }
+
+    // ========== SETTINGS FUNCTIONS ==========
+    function exportData() { 
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" }); 
+      const a = document.createElement("a"); 
+      a.href = URL.createObjectURL(blob); 
+      a.download = `ratebook_${Date.now()}.json`; 
+      a.click(); 
+      showToast("Exported JSON"); 
+    }
+
+    function exportExcel() { 
+      if (typeof XLSX === "undefined") { showToast("Excel library loading..."); return; }
+      const ws = XLSX.utils.json_to_sheet(items.map(i => ({
+        Name: i.name, Brand: i.brand, Buy: i.buyPrice, Sell: i.sellPrice, 
+        Category: i.cat, Unit: i.unit, Notes: i.note
+      }))); 
+      const wb = XLSX.utils.book_new(); 
+      XLSX.utils.book_append_sheet(wb, ws, "RateBook"); 
+      XLSX.writeFile(wb, `ratebook_${Date.now()}.xlsx`); 
+      showToast("Exported Excel"); 
+    }
+
+    function importData(e) { 
+      const file = e.target.files[0]; 
+      const reader = new FileReader(); 
+      reader.onload = ev => { 
+        try { 
+          const data = JSON.parse(ev.target.result); 
+          if (Array.isArray(data)) { 
+            items = data; 
+            renderAll(); 
+            pushToSheets(); 
+            showToast("Imported"); 
+          } 
+        } catch(e) {} 
+      }; 
+      reader.readAsText(file); 
+      e.target.value = ""; 
+    }
+
+    function clearAllData() { 
+      if (confirm("Delete ALL items permanently?")) { 
+        items = []; 
+        renderAll(); 
+        pushToSheets(); 
+        showToast("All cleared"); 
+      } 
+    }
+
+    function shareItem(id) { 
+      const item = items.find(i => i.id === id); 
+      if (item) { 
+        const text = `${item.name}\nBuy: ₹${item.buyPrice} | Sell: ₹${item.sellPrice}\n${item.note || ""}`; 
+        navigator.clipboard?.writeText(text); 
+        showToast("Copied to clipboard"); 
+      } 
+    }
+
+    // ========== THEME ==========
+    function setTheme(theme) { 
+      document.documentElement.setAttribute("data-theme", theme); 
+      localStorage.setItem("ratebook_theme", theme); 
+    }
+
+    function loadTheme() { 
+      const saved = localStorage.getItem("ratebook_theme") || "aurora"; 
+      setTheme(saved); 
+    }
+
+    // ========== UTILITIES ==========
+    function escapeHtml(str) { 
+      if (!str) return ""; 
+      return str.replace(/[&<>]/g, m => {
+        if (m === "&") return "&amp;";
+        if (m === "<") return "&lt;";
+        return "&gt;";
+      }); 
+    }
+
+    function switchTab(tab) { 
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active")); 
+      document.getElementById(`tab-${tab}`).classList.add("active"); 
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); 
+      if (event && event.target) event.target.classList.add("active");
+      if (tab === "quote") renderQuoteItems(); 
+    }
+
+    function showToast(msg) { 
+      const t = document.getElementById("toast"); 
+      t.textContent = msg; 
+      t.classList.add("show"); 
+      setTimeout(() => t.classList.remove("show"), 2500); 
+    }
+
+    // ========== INIT ==========
+    loadTheme();
+    loadFromSheets();
+    autoRefreshInterval = setInterval(() => loadFromSheets(), 5000);
+    
+    // Expose global functions
+    window.switchTab = switchTab;
+    window.setFilter = setFilter;
+    window.setSort = setSort;
+    window.onSearchInput = onSearchInput;
+    window.clearSearchInput = clearSearchInput;
+    window.saveItem = saveItem;
+    window.openDetail = openDetail;
+    window.closeDetail = closeDetail;
+    window.openEdit = openEdit;
+    window.closeEdit = closeEdit;
+    window.updateItem = updateItem;
+    window.deleteItem = deleteItem;
+    window.shareItem = shareItem;
+    window.exportData = exportData;
+    window.exportExcel = exportExcel;
+    window.importData = importData;
+    window.clearAllData = clearAllData;
+    window.reconcileWithSheet = reconcileWithSheet;
+    window.setTheme = setTheme;
+    window.toggleQuoteItem = toggleQuoteItem;
+    window.changeQty = changeQty;
+    window.renderQuoteItems = renderQuoteItems;
+    window.renderQuoteSummary = renderQuoteSummary;
+    window.clearQuote = clearQuote;
+    window.shareQuote = shareQuote;
+  </script>
+</body>
+</html>
