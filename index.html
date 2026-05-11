@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aurora">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2b3d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Elektra | Rate Book</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ----- MODERN THEMES (Slate, Aurora, Ember) ----- */
+    :root {
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 8px 20px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.02);
+      --shadow-md: 0 12px 28px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.05);
+      --shadow-lg: 0 20px 35px -12px rgba(0,0,0,0.1);
+      --transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+
+    [data-theme="slate"] {
+      --bg-base: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f8fafc;
+      --border: #e2e8f0;
+      --accent-primary: #1e40af;
+      --accent-secondary: #3b82f6;
+      --accent-soft: #eff6ff;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --success: #0f7b3a;
+      --success-light: #eaf8ef;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --gold: #d97706;
+    }
+
+    [data-theme="aurora"] {
+      --bg-base: #eef2ff;
+      --bg-surface: #ffffff;
+      --bg-elevated: #fafcff;
+      --border: #d9e2f5;
+      --accent-primary: #0f2b3d;
+      --accent-secondary: #2c7da0;
+      --accent-soft: #eef7ff;
+      --text-primary: #0a2540;
+      --text-secondary: #2c3e50;
+      --text-muted: #5e7c97;
+      --success: #1f8a4c;
+      --success-light: #e3f9ee;
+      --danger: #e25c5c;
+      --danger-light: #fff1f0;
+      --gold: #e2a13f;
+    }
+
+    [data-theme="ember"] {
+      --bg-base: #2c1a1a;
+      --bg-surface: #3e2a2a;
+      --bg-elevated: #4f3838;
+      --border: #684e4e;
+      --accent-primary: #ff8c42;
+      --accent-secondary: #ffc857;
+      --accent-soft: #ffe5d9;
+      --text-primary: #ffefd9;
+      --text-secondary: #fad4b3;
+      --text-muted: #c7a58a;
+      --success: #66cc8a;
+      --success-light: #283b2a;
+      --danger: #ff7b72;
+      --danger-light: #542a25;
+      --gold: #ffb347;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* Layout */
+    .app-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .glass-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      background: rgba(var(--bg-surface-rgb, 255 255 255), 0.92);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-marker {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    }
+
+    .logo-marker svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+    }
+
+    .logo-text {
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-chip {
+      background: var(--accent-soft);
+      border-radius: 40px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .sync-badge {
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    /* Navigation Tabs (Modern) */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-surface);
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .nav-item {
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition);
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .nav-item i { margin-right: 6px; font-style: normal; }
+    .nav-item.active {
+      background: var(--accent-primary);
+      color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    /* Main panels */
+    .panel {
+      display: none;
+      padding: 24px 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    /* Cards */
+    .card-modern {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', monospace;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      color: var(--text-primary);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-secondary);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 10px 18px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Item list */
+    .item-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .item-row {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .item-row:hover {
+      border-color: var(--accent-secondary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .price-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .filter-pill {
+      background: var(--bg-elevated);
+      border-radius: 40px;
+      padding: 6px 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+
+    .filter-pill.active {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-tile {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-primary);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+
+    @media (max-width: 680px) {
+      .panel { padding: 16px; }
+      .nav-tabs { padding: 8px 12px; }
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <header class="glass-header">
+    <div class="logo-area">
+      <div class="logo-marker"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <span class="logo-text">Elektra<span style="font-weight:400;">/RateBook</span></span>
+    </div>
+    <div class="header-actions">
+      <div class="status-chip" id="syncStatusChip">
+        <span>⚡</span> <span id="syncLabel">Online</span>
+      </div>
+      <button class="btn-secondary" onclick="manualReconcile()" style="padding:6px 14px;">↻ Sync</button>
+    </div>
+  </header>
+
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-item active" data-panel="browse">📦 Browse Items</div>
+    <div class="nav-item" data-panel="add">✚ Add Item</div>
+    <div class="nav-item" data-panel="settings">⚙️ Settings & Theme</div>
+  </div>
+
+  <!-- BROWSE PANEL -->
+  <div class="panel active" id="panel-browse">
+    <div class="stats-row" id="statsContainer"></div>
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="card-modern" style="padding: 16px;">
+      <input type="text" id="searchInput" placeholder="🔍 Search by name, brand, category..." style="margin-bottom: 12px;">
+      <div class="item-grid" id="itemsListContainer">
+        <div style="text-align: center; padding: 40px;">Loading from Google Sheets...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PANEL -->
+  <div class="panel" id="panel-add">
+    <div class="card-modern">
+      <h3 style="margin-bottom: 18px;">➕ Add new electrical item</h3>
+      <div class="grid-2">
+        <div class="input-group"><label>Item name *</label><input type="text" id="addName" placeholder="e.g., 32A SP MCB"></div>
+        <div class="input-group"><label>Brand</label><input type="text" id="addBrand" placeholder="Havells / Siemens"></div>
+        <div class="input-group"><label>Buy Price (₹)</label><input type="number" id="addBuyPrice" step="0.01"></div>
+        <div class="input-group"><label>Sell Price (₹)</label><input type="number" id="addSellPrice" step="0.01"></div>
+        <div class="input-group"><label>Unit</label><input type="text" id="addUnit" placeholder="Pcs / Meter"></div>
+        <div class="input-group"><label>Category</label><input type="text" id="addCat" placeholder="MCB, Wire, Switch"></div>
+        <div class="input-group"><label>Distributor</label><input type="text" id="addDist"></div>
+        <div class="input-group"><label>Notes</label><textarea id="addNote" rows="2"></textarea></div>
+      </div>
+      <button class="btn-primary" id="saveBtn">💾 Save Item</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+    <div class="card-modern">
+      <h3 style="margin-bottom: 14px;">🎨 Theme & Appearance</h3>
+      <div class="grid-2" style="margin-bottom: 28px;">
+        <button class="btn-secondary" data-theme-set="slate">🌫️ Slate (default)</button>
+        <button class="btn-secondary" data-theme-set="aurora">🌌 Aurora</button>
+        <button class="btn-secondary" data-theme-set="ember">🔥 Ember</button>
+      </div>
+      <h3 style="margin-bottom: 12px;">📡 Google Sheets (always live)</h3>
+      <p style="margin-bottom: 16px; color: var(--text-muted);">Data loads from your connected Sheet on every app open and every 6s auto-refresh. Works offline via cache.</p>
+      <div class="input-group"><label>Web App URL (Google Apps Script)</label><input type="url" id="gsUrlInput" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div style="display: flex; gap: 12px; margin-top: 8px;">
+        <button id="setSheetBtn" class="btn-primary" style="background: var(--success);">🔗 Set & Load from Sheet</button>
+        <button id="forcePullBtn" class="btn-secondary">⬇️ Pull Now</button>
+      </div>
+      <div id="gsStatusMsg" style="margin-top: 16px; font-size: 0.85rem;"></div>
+    </div>
+    <div class="card-modern">
+      <h3>💾 Export / Backup</h3>
+      <div class="grid-2" style="margin-top: 12px;">
+        <button class="btn-secondary" id="exportExcelBtn">📎 Export Excel</button>
+        <button class="btn-secondary" id="exportJsonBtn">📄 Export JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastMsg" class="toast">✓ Synced</div>
+
+<script>
+  // ---------- GLOBAL STATE ----------
+  let items = [];           // master array
+  let activeCategoryFilter = "All";
+  let currentTheme = localStorage.getItem("elektra_theme") || "aurora";
+  let gsSheetUrl = localStorage.getItem("elektra_gs_url") || "";
+  let autoRefreshTimer = null;
+  
+  // DOM elements
+  const browseContainer = document.getElementById("itemsListContainer");
+  const filterBar = document.getElementById("filterBar");
+  const statsContainer = document.getElementById("statsContainer");
+  const searchInput = document.getElementById("searchInput");
+  
+  // Apply theme
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("elektra_theme", theme);
+    currentTheme = theme;
+  }
+  
+  // Load theme from storage
+  applyTheme(currentTheme);
+  
+  // Helper: render stats & filters & items
+  function renderAll() {
+    renderStats();
+    renderFilterChips();
+    renderItemsList();
+  }
+  
+  function renderStats() {
+    if(!statsContainer) return;
+    const total = items.length;
+    const uniqueCats = new Set(items.map(i=>i.cat).filter(Boolean)).size;
+    const avgBuy = total ? (items.reduce((s,i)=>s+(i.buyPrice||0),0)/total).toFixed(0) : 0;
+    const avgSell = total ? (items.reduce((s,i)=>s+(i.sellPrice||0),0)/total).toFixed(0) : 0;
+    statsContainer.innerHTML = `
+      <div class="stat-tile"><div style="font-size: 2rem; font-weight:800;">${total}</div><div>Items</div></div>
+      <div class="stat-tile"><div style="font-size: 2rem; font-weight:800;">${uniqueCats}</div><div>Categories</div></div>
+      <div class="stat-tile"><div style="font-size: 1.4rem;">₹${avgBuy}</div><div>Avg Buy</div></div>
+      <div class="stat-tile"><div style="font-size: 1.4rem;">₹${avgSell}</div><div>Avg Sell</div></div>
+    `;
+  }
+  
+  function renderFilterChips() {
+    if(!filterBar) return;
+    const cats = ["All", ...new Set(items.map(i=>i.cat).filter(Boolean))];
+    filterBar.innerHTML = cats.map(cat => `<div class="filter-pill ${activeCategoryFilter===cat ? 'active' : ''}" data-cat="${cat.replace(/"/g, '&quot;')}">${cat}</div>`).join('');
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        activeCategoryFilter = pill.dataset.cat;
+        renderFilterChips();
+        renderItemsList();
+      });
+    });
+  }
+  
+  function renderItemsList() {
+    if(!browseContainer) return;
+    let filtered = [...items];
+    const query = (searchInput.value || "").toLowerCase();
+    if(activeCategoryFilter !== "All") filtered = filtered.filter(i => i.cat === activeCategoryFilter);
+    if(query) filtered = filtered.filter(i => (i.name||"").toLowerCase().includes(query) || (i.brand||"").toLowerCase().includes(query));
+    if(filtered.length === 0) {
+      browseContainer.innerHTML = `<div style="text-align:center; padding:50px;">✨ No items match — try adding or sync from sheet.</div>`;
+      return;
+    }
+    browseContainer.innerHTML = filtered.map(item => `
+      <div class="item-row" onclick="openItemDetail('${item.id}')">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap;">
+          <div><strong style="font-size:1rem;">${escapeHtml(item.name)}</strong> ${item.brand ? `<span style="color: var(--text-muted);">(${escapeHtml(item.brand)})</span>` : ''}</div>
+          <div style="display: flex; gap: 12px;">
+            <span class="price-badge" style="color: var(--accent-primary);">₹${(item.buyPrice||0).toLocaleString()}</span>
+            <span class="price-badge" style="color: var(--success);">₹${(item.sellPrice||0).toLocaleString()}</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px; font-size:0.75rem; color:var(--text-muted);">
+          ${item.cat ? `<span>📂 ${escapeHtml(item.cat)}</span>` : ''}
+          ${item.unit ? `<span>📏 ${escapeHtml(item.unit)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+  
+  // ----- GOOGLE SHEETS CORE (always live, works offline with cache) -----
+  async function fetchFromSheets() {
+    if(!gsSheetUrl) {
+      if(items.length===0) browseContainer.innerHTML = '<div style="text-align:center; padding:40px;">⚙️ Go to Settings & set your Google Sheets Web App URL first.</div>';
+      updateSyncStatus(false);
+      return false;
+    }
+    try {
+      updateSyncStatus(true, "loading");
+      const response = await fetch(gsSheetUrl + "?action=read", { cache: "no-store", method: "GET" });
+      const data = await response.json();
+      if(Array.isArray(data)) {
+        // normalise structure
+        const newItems = data.map(row => ({
+          id: String(row.id || crypto.randomUUID?.() || Date.now()+Math.random()),
+          name: row.name || "Unnamed",
+          brand: row.brand || "",
+          buyPrice: Number(row.buyPrice) || 0,
+          sellPrice: Number(row.sellPrice) || 0,
+          unit: row.unit || "",
+          cat: row.cat || "Uncategorized",
+          note: row.note || "",
+          distributor: row.distributor || "",
+          updated: row.updated || new Date().toISOString().slice(0,10)
+        }));
+        items = newItems;
+        // Save offline backup (CACHE for offline)
+        localStorage.setItem("elektra_offline_cache", JSON.stringify(items));
+        renderAll();
+        updateSyncStatus(true, "online");
+        showToast("✅ Synced from Google Sheets", "#0f7b3a");
+        return true;
+      } else throw new Error("Invalid sheet response");
+    } catch(err) {
+      console.warn("Sheet fetch failed, using cached data", err);
+      // offline fallback
+      const cached = localStorage.getItem("elektra_offline_cache");
+      if(cached && items.length === 0) {
+        items = JSON.parse(cached);
+        renderAll();
+      }
+      updateSyncStatus(false);
+      if(items.length === 0) browseContainer.innerHTML = '<div style="text-align:center; padding:40px;">⚠️ Offline + no cache — connect to network & set proper Sheet URL.</div>';
+      return false;
+    }
+  }
+  
+  // Push to sheet (after add/edit)
+  async function pushToSheets() {
+    if(!gsSheetUrl) { showToast("No Google Sheets URL", "#dc2626"); return false; }
+    try {
+      const payload = JSON.stringify({ action: "write", items: items });
+      await fetch(gsSheetUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: payload
+      });
+      // Also update offline cache
+      localStorage.setItem("elektra_offline_cache", JSON.stringify(items));
+      showToast("📤 Pushed to Google Sheets", "#1f8a4c");
+      return true;
+    } catch(e) { showToast("Push failed, but saved locally", "#dc2626"); return false; }
+  }
+  
+  function updateSyncStatus(online, msg = null) {
+    const labelSpan = document.getElementById("syncLabel");
+    if(labelSpan) labelSpan.innerText = online ? (msg === "loading" ? "Syncing..." : "Live") : "Offline (cached)";
+  }
+  
+  // manual two-way reconcile: pull, merge push
+  async function manualReconcile() {
+    await fetchFromSheets();
+    await pushToSheets();
+    renderAll();
+  }
+  
+  // Save new item
+  async function addNewItem() {
+    const name = document.getElementById("addName").value.trim();
+    if(!name) { showToast("Item name required", "#dc2626"); return; }
+    const newItem = {
+      id: Date.now().toString() + Math.floor(Math.random()*10000),
+      name: name,
+      brand: document.getElementById("addBrand").value.trim(),
+      buyPrice: parseFloat(document.getElementById("addBuyPrice").value) || 0,
+      sellPrice: parseFloat(document.getElementById("addSellPrice").value) || 0,
+      unit: document.getElementById("addUnit").value.trim(),
+      cat: document.getElementById("addCat").value.trim() || "General",
+      note: document.getElementById("addNote").value.trim(),
+      distributor: document.getElementById("addDist").value.trim(),
+      updated: new Date().toLocaleDateString("en-IN")
+    };
+    items.unshift(newItem);
+    renderAll();
+    await pushToSheets();
+    document.querySelectorAll("#panel-add input, #panel-add textarea").forEach(el => el.value = "");
+    showToast(`✅ "${name}" added`);
+    // switch to browse for better UX
+    switchPanel("browse");
+  }
+  
+  function openItemDetail(id) {
+    const item = items.find(i => i.id === id);
+    if(!item) return;
+    alert(`📋 ${item.name}\n💲 Buy: ₹${item.buyPrice} | Sell: ₹${item.sellPrice}\n🏷️ Category: ${item.cat}\n📝 ${item.note || "—"}`);
+  }
+  
+  // Theme switcher
+  function setupThemeButtons() {
+    document.querySelectorAll("[data-theme-set]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const theme = btn.getAttribute("data-theme-set");
+        applyTheme(theme);
+      });
+    });
+  }
+  
+  // Export Excel
+  function exportToExcel() {
+    if(typeof XLSX === "undefined") { showToast("Excel lib not ready"); return; }
+    const wsData = items.map(i => ({ Name: i.name, Brand: i.brand, Category: i.cat, "Buy(₹)": i.buyPrice, "Sell(₹)": i.sellPrice, Unit: i.unit, Notes: i.note }));
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "RateBook");
+    XLSX.writeFile(wb, `elektra_rates_${new Date().toISOString().slice(0,19)}.xlsx`);
+  }
+  
+  function exportJSON() {
+    const dataStr = JSON.stringify(items, null, 2);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `elektra_backup_${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    showToast("Exported JSON");
+  }
+  
+  // Switch panels and persist navigation
+  function switchPanel(panelId) {
+    document.querySelectorAll(".panel").forEach(panel => panel.classList.remove("active"));
+    document.getElementById(`panel-${panelId}`).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(nav => nav.classList.remove("active"));
+    const activeNav = Array.from(document.querySelectorAll(".nav-item")).find(n => n.dataset.panel === panelId);
+    if(activeNav) activeNav.classList.add("active");
+  }
+  
+  function showToast(msg, bg = "#1e40af") {
+    const toast = document.getElementById("toastMsg");
+    toast.style.background = bg;
+    toast.innerText = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2500);
+  }
+  
+  // Initialise google sheets URL from localstorage & start auto polling (6s)
+  function initSheetsConnection() {
+    const urlInput = document.getElementById("gsUrlInput");
+    if(urlInput) urlInput.value = gsSheetUrl;
+    if(gsSheetUrl) {
+      fetchFromSheets();
+      if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+      autoRefreshTimer = setInterval(() => {
+        if(gsSheetUrl) fetchFromSheets();
+      }, 6000);
+    } else {
+      updateSyncStatus(false);
+      browseContainer.innerHTML = '<div style="text-align:center; padding:40px;">🔌 Please set your Google Sheets Web App URL in Settings tab.</div>';
+    }
+  }
+  
+  // Save sheet URL and reload
+  function setSheetUrlAndLoad() {
+    const input = document.getElementById("gsUrlInput");
+    const newUrl = input.value.trim();
+    if(!newUrl || !newUrl.includes("script.google.com")) {
+      showToast("Enter valid Apps Script Web App URL", "#dc2626");
+      return;
+    }
+    gsSheetUrl = newUrl;
+    localStorage.setItem("elektra_gs_url", gsSheetUrl);
+    document.getElementById("gsStatusMsg").innerHTML = "✅ URL saved. Fetching data...";
+    fetchFromSheets();
+    if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+    autoRefreshTimer = setInterval(() => { if(gsSheetUrl) fetchFromSheets(); }, 6000);
+  }
+  
+  // Event listeners
+  document.getElementById("saveBtn")?.addEventListener("click", addNewItem);
+  document.getElementById("setSheetBtn")?.addEventListener("click", setSheetUrlAndLoad);
+  document.getElementById("forcePullBtn")?.addEventListener("click", () => fetchFromSheets());
+  document.getElementById("exportExcelBtn")?.addEventListener("click", exportToExcel);
+  document.getElementById("exportJsonBtn")?.addEventListener("click", exportJSON);
+  searchInput?.addEventListener("input", () => renderItemsList());
+  
+  // nav
+  document.querySelectorAll(".nav-item").forEach(nav => {
+    nav.addEventListener("click", () => switchPanel(nav.dataset.panel));
+  });
+  
+  // bootstrap
+  (function init() {
+    setupThemeButtons();
+    initSheetsConnection();
+    // Preload offline cache if present
+    const offlineCache = localStorage.getItem("elektra_offline_cache");
+    if(offlineCache && items.length === 0) {
+      try {
+        items = JSON.parse(offlineCache);
+        renderAll();
+      } catch(e) {}
+    }
+    renderAll();
+  })();
+</script>
+</body>
+</html>
